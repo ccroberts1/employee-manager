@@ -1,7 +1,17 @@
+const mysql = require("mysql2");
+const db = require("./config/connection");
 const inquirer = require("inquirer");
 const ListPrompt = require("inquirer/lib/prompts/list");
 
-const initialQuestion = [
+//CREATES DATABASE CONNECTION
+const connection = mysql.createConnection({
+  host: db.connect.host,
+  user: db.connect.user,
+  database: employee_db,
+});
+
+//INQUIRER QUESTIONS
+const initialQuestions = [
   {
     type: "list",
     name: "initialChoice",
@@ -24,67 +34,19 @@ const initialQuestion = [
       "Quit",
     ],
   },
-];
-
-const addDept = [
   {
     type: "input",
     name: "deptName",
     message: "What is the name of the department?",
+    when: (answers) => answers.initialChoice === "Add Department",
   },
   //Once this is added, needs to add the name to the database and add the message "[deptName] added to the database"
-  {},
 ];
 
-const addRole = [
-  {
-    type: "input",
-    name: "roleName",
-    message: "What is the name of the role?",
-  },
-  {
-    type: "input",
-    name: "roleSalary",
-    message: "What is the salary of the role?",
-  },
-  {
-    type: "list",
-    name: "roleDept",
-    message: "Which department does the role belong to?",
-    choice: ["Engineering", "Finance", "Legal", "Sales", "Service"],
-  },
-];
-
-const addEmployee = [
-  {
-    type: "input",
-    name: "firstName",
-    message: "What is the employee's first name?",
-  },
-  {
-    type: "input",
-    name: "lastName",
-    message: "What is the employee's last name?",
-  },
-  {
-    type: "list",
-    name: "roleDept",
-    message: "Which department does the role belong to?",
-    choice: [
-      "Sales Lead",
-      "Salesperson",
-      "Lead Engineer",
-      "Software Engineer",
-      "Account Manager",
-      "Accountant",
-      "Legal Team Lead",
-      "Lawyer",
-      "Customer Service",
-    ],
-  },
-  {
-    type: "list",
-    name: "empManager",
-    choice: ["None"], //find a way to add in list of managers
-  },
-];
+inquirer.prompt(initialQuestions).then((response) => {
+  switch (response.initialChoice) {
+    case "View All Employees":
+      console.log("Picked view all employees");
+      break;
+  }
+});
