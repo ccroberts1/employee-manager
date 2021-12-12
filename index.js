@@ -11,7 +11,7 @@ const ListPrompt = require("inquirer/lib/prompts/list");
 // });
 
 //INQUIRER QUESTIONS
-const initialQuestions = [
+const questions = [
   {
     type: "list",
     name: "initialChoice",
@@ -85,7 +85,8 @@ const initialQuestions = [
     type: "list",
     name: "roleDept",
     message: "Which department does the role belong to?",
-    choice: ["Engineering", "Finance", "Legal", "Sales", "Service"],
+    choice: ["Engineering", "Finance", "Legal", "Sales", "Support"],
+    //Better if this could be generated from the table instead of hard coded
     when: (answers) => answers.initialChoice === "Add Role",
   },
   {
@@ -96,7 +97,7 @@ const initialQuestions = [
   },
 ];
 
-inquirer.prompt(initialQuestions).then((response) => {
+inquirer.prompt(questions).then((response) => {
   switch (response.initialChoice) {
     case "View All Employees":
       console.log("Picked view all employees");
