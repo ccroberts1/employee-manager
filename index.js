@@ -1,9 +1,7 @@
 require("dotenv").config();
 const mysql = require("mysql2");
 const inquirer = require("inquirer");
-// const ListPrompt = require("inquirer/lib/prompts/list");
 const cTable = require("console.table");
-// const Connection = require("mysql2/typings/mysql/lib/Connection");
 
 //GLOBAL VARIABLES
 
@@ -25,19 +23,12 @@ function createQuestions(managerArray, deptArray, roleArray) {
       message: "What would you like to do?",
       choices: [
         "View All Employees",
-        // "View All Employees By Department",
-        // "View All Employees By Manager",
         "Add Employee",
-        // "Remove Employee",
         "Update Employee Role",
-        // "Update Employee Manager",
         "View All Roles",
         "Add Role",
-        // "Remove Role",
         "View All Departments",
         "Add Department",
-        // "Remove Department",
-        // "View Total Utilized Budget by Department",
         "Quit",
       ],
     },
@@ -58,18 +49,6 @@ function createQuestions(managerArray, deptArray, roleArray) {
       name: "empRole",
       message: "What is the employee's role?",
       choices: roleArray,
-      // [
-      //   "Sales Lead",
-      //   "Salesperson",
-      //   "Lead Engineer",
-      //   "Software Engineer",
-      //   "Account Manager",
-      //   "Accountant",
-      //   "Legal Team Lead",
-      //   "Lawyer",
-      //   "Customer Service",
-      // ],
-      //Better if this could be dynamically generated instead of hard coded
       when: (answers) => answers.initialChoice === "Add Employee",
     },
     {
@@ -96,8 +75,6 @@ function createQuestions(managerArray, deptArray, roleArray) {
       name: "roleDept",
       message: "Which department does the role belong to?",
       choices: deptArray,
-      // ["Engineering", "Finance", "Legal", "Sales", "Support"],
-      //Better if this could be generated from the table instead of hard coded
       when: (answers) => answers.initialChoice === "Add Role",
     },
     {
@@ -123,37 +100,7 @@ function createQuestions(managerArray, deptArray, roleArray) {
   ];
 }
 
-//FUNCTIONS REQUIRED FOR PROMPTS - MOVE TO CLASS IF POSSIBLE
-async function findRole(empRole, callback) {
-  connection.execute(
-    "SELECT `id` FROM `role` WHERE `title` = ?",
-    [empRole],
-    function (err, results, fields) {
-      callback(results[0].id);
-    }
-  );
-}
-
-async function findDeptID(empDept, callback) {
-  connection.execute(
-    "SELECT `id` FROM `department` WHERE `name` = ?",
-    [empDept],
-    function (err, results, fields) {
-      callback(results[0].id);
-    }
-  );
-}
-
-// async function findManager(empManagerFirst, empManagerLast, callback) {
-//   connection.execute(
-//     "SELECT `id` FROM `employee` WHERE `first_name` = ? || `last_name` = ?",
-//     [empManagerFirst, empManagerLast],
-//     function (err, results, fields) {
-//       callback(results[0].id);
-//     }
-//   );
-// }
-
+//FUNCTIONS REQUIRED FOR PROMPTS
 async function findAllEmployees(callback) {
   connection.execute(
     "SELECT `first_name`, `last_name`, `id` FROM `employee`",
@@ -205,14 +152,10 @@ function init(questions) {
       case "View All Employees":
         findAllEmployees((empList) => {
           console.table(empList);
+          init(questions);
         });
+
         break;
-      // case "View All Employees By Department":
-      //   console.log("Picked view all employees by department");
-      //   break;
-      // case "View All Employees By Manager":
-      //   console.log("Picked view all employees by manager");
-      //   break;
       case "Add Employee":
         connection.execute(
           "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
@@ -226,10 +169,8 @@ function init(questions) {
         console.log(
           `${response.firstName} ${response.lastName} has been added to the database.`
         );
+        init(questions);
         break;
-      // case "Remove Employee":
-      //   console.log("Picked remove employee");
-      //   break;
       case "Update Employee Role":
         connection.execute(
           "UPDATE `employee` SET `role_id` = ? WHERE `id` = ?",
@@ -237,15 +178,14 @@ function init(questions) {
           function (err, results, fields) {
             if (err) throw err;
             console.log("Employee record has been updated!");
+            init(questions);
           }
         );
         break;
-      // case "Update Employee Manager":
-      //   console.log("Picked update employee manager");
-      //   break;
       case "View All Roles":
         findAllRoles((roleList) => {
           console.table(roleList);
+          init(questions);
         });
         break;
       case "Add Role":
@@ -255,15 +195,14 @@ function init(questions) {
           function (err, results, fields) {
             if (err) throw err;
             console.log(`${response.roleName} has been added to the database.`);
+            init(questions);
           }
         );
         break;
-      // case "Remove Role":
-      //   console.log("Picked remove role");
-      //   break;
       case "View All Departments":
         findAllDepts((deptList) => {
           console.table(deptList);
+          init(questions);
         });
         break;
       case "Add Department":
@@ -273,15 +212,10 @@ function init(questions) {
           function (err, results, fields) {
             if (err) throw err;
             console.log(`${response.deptName} has been added to the database.`);
+            init(questions);
           }
         );
         break;
-      // case "Remove Department":
-      //   console.log("Picked remove department");
-      //   break;
-      // case "View Total Utilized Budget by Department":
-      //   console.log("Picked view total utilized budget by department");
-      //   break;
       case "Quit":
         console.log("Have a good day!");
         break;
