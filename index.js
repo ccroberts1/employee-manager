@@ -209,14 +209,18 @@ function init(questions) {
         });
         break;
       case "Add Role":
-        connection.execute(
-          "INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
-          [response.roleName, response.roleSalary, null],
-          function (err, results, fields) {
-            if (err) throw err;
-            console.log(`${response.roleName} has been added to the database.`);
-          }
-        );
+        findRole(response.roleDept, (roleID) => {
+          connection.execute(
+            "INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
+            [response.roleName, response.roleSalary, roleID],
+            function (err, results, fields) {
+              if (err) throw err;
+              console.log(
+                `${response.roleName} has been added to the database.`
+              );
+            }
+          );
+        });
         break;
       // case "Remove Role":
       //   console.log("Picked remove role");
@@ -228,11 +232,11 @@ function init(questions) {
         break;
       case "Add Department":
         connection.execute(
-          "INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
-          [response.roleName, response.roleSalary, null],
+          "INSERT INTO department (name) VALUES (?)",
+          [response.deptName],
           function (err, results, fields) {
             if (err) throw err;
-            console.log(`${response.roleName} has been added to the database.`);
+            console.log(`${response.deptName} has been added to the database.`);
           }
         );
         break;
