@@ -17,7 +17,7 @@ const connection = mysql.createConnection({
 
 //INQUIRER QUESTIONS
 
-function createQuestions(managerArray) {
+function createQuestions(managerArray, deptArray, roleArray) {
   return [
     {
       type: "list",
@@ -57,17 +57,18 @@ function createQuestions(managerArray) {
       type: "list",
       name: "empRole",
       message: "What is the employee's role?",
-      choices: [
-        "Sales Lead",
-        "Salesperson",
-        "Lead Engineer",
-        "Software Engineer",
-        "Account Manager",
-        "Accountant",
-        "Legal Team Lead",
-        "Lawyer",
-        "Customer Service",
-      ],
+      choices: roleArray,
+      // [
+      //   "Sales Lead",
+      //   "Salesperson",
+      //   "Lead Engineer",
+      //   "Software Engineer",
+      //   "Account Manager",
+      //   "Accountant",
+      //   "Legal Team Lead",
+      //   "Lawyer",
+      //   "Customer Service",
+      // ],
       //Better if this could be dynamically generated instead of hard coded
       when: (answers) => answers.initialChoice === "Add Employee",
     },
@@ -94,7 +95,8 @@ function createQuestions(managerArray) {
       type: "list",
       name: "roleDept",
       message: "Which department does the role belong to?",
-      choices: ["Engineering", "Finance", "Legal", "Sales", "Support"],
+      choices: deptArray,
+      // ["Engineering", "Finance", "Legal", "Sales", "Support"],
       //Better if this could be generated from the table instead of hard coded
       when: (answers) => answers.initialChoice === "Add Role",
     },
@@ -103,6 +105,20 @@ function createQuestions(managerArray) {
       name: "deptName",
       message: "What is the name of the department?",
       when: (answers) => answers.initialChoice === "Add Department",
+    },
+    {
+      type: "list",
+      name: "updateEmpName",
+      message: "Select the employee that you would like to update",
+      choices: managerArray,
+      when: (answers) => answers.initialChoice === "Update Employee Role",
+    },
+    {
+      type: "list",
+      name: "updateEmpRole",
+      message: "What is the new role?",
+      choices: roleArray,
+      when: (answers) => answers.initialChoice === "Update Employee Role",
     },
   ];
 }
@@ -118,15 +134,25 @@ async function findRole(empRole, callback) {
   );
 }
 
-async function findManager(empManagerFirst, empManagerLast, callback) {
+async function findDeptID(empDept, callback) {
   connection.execute(
-    "SELECT `id` FROM `employee` WHERE `first_name` = ? || `last_name` = ?",
-    [empManagerFirst, empManagerLast],
+    "SELECT `id` FROM `department` WHERE `name` = ?",
+    [empDept],
     function (err, results, fields) {
       callback(results[0].id);
     }
   );
 }
+
+// async function findManager(empManagerFirst, empManagerLast, callback) {
+//   connection.execute(
+//     "SELECT `id` FROM `employee` WHERE `first_name` = ? || `last_name` = ?",
+//     [empManagerFirst, empManagerLast],
+//     function (err, results, fields) {
+//       callback(results[0].id);
+//     }
+//   );
+// }
 
 async function findAllEmployees(callback) {
   connection.execute(
@@ -147,7 +173,7 @@ async function findAllDepts(callback) {
 }
 async function findAllRoles(callback) {
   connection.execute(
-    "SELECT `id`, `title`, `department_id`, `salary` FROM `role`",
+    "SELECT `id`, `title`, `salary`, `department_id` FROM `role`",
     function (err, results, fields) {
       callback(results);
     }
@@ -158,9 +184,18 @@ findAllEmployees((empList) => {
   let managerArray = empList.map((obj) => {
     return { name: `${obj.first_name} ${obj.last_name}`, value: obj.id };
   });
-  // console.log(managerArray);
-  let questions = createQuestions(managerArray);
-  init(questions);
+  findAllDepts((deptList) => {
+    let deptArray = deptList.map((obj) => {
+      return { name: `${obj.name}`, value: obj.id };
+    });
+    findAllRoles((roleList) => {
+      let roleArray = roleList.map((obj) => {
+        return { name: `${obj.title}`, value: obj.id };
+      });
+      let questions = createQuestions(managerArray, deptArray, roleArray);
+      init(questions);
+    });
+  });
 });
 
 //RUN INQUIRER
@@ -179,17 +214,15 @@ function init(questions) {
       //   console.log("Picked view all employees by manager");
       //   break;
       case "Add Employee":
-        findRole(response.empRole, (roleID) => {
-          connection.execute(
-            "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
-            [
-              response.firstName,
-              response.lastName,
-              roleID,
-              response.managerArray.value,
-            ]
-          );
-        });
+        connection.execute(
+          "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
+          [
+            response.firstName,
+            response.lastName,
+            response.empRole,
+            response.empManager,
+          ]
+        );
         console.log(
           `${response.firstName} ${response.lastName} has been added to the database.`
         );
@@ -198,7 +231,14 @@ function init(questions) {
       //   console.log("Picked remove employee");
       //   break;
       case "Update Employee Role":
-        console.log("Picked update employee role");
+        connection.execute(
+          "UPDATE `employee` SET `role_id` = ? WHERE `id` = ?",
+          [response.updateEmpRole, response.updateEmpName],
+          function (err, results, fields) {
+            if (err) throw err;
+            console.log("Employee record has been updated!");
+          }
+        );
         break;
       // case "Update Employee Manager":
       //   console.log("Picked update employee manager");
@@ -209,18 +249,14 @@ function init(questions) {
         });
         break;
       case "Add Role":
-        findRole(response.roleDept, (roleID) => {
-          connection.execute(
-            "INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
-            [response.roleName, response.roleSalary, roleID],
-            function (err, results, fields) {
-              if (err) throw err;
-              console.log(
-                `${response.roleName} has been added to the database.`
-              );
-            }
-          );
-        });
+        connection.execute(
+          "INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
+          [response.roleName, response.roleSalary, response.roleDept],
+          function (err, results, fields) {
+            if (err) throw err;
+            console.log(`${response.roleName} has been added to the database.`);
+          }
+        );
         break;
       // case "Remove Role":
       //   console.log("Picked remove role");
