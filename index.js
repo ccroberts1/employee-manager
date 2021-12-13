@@ -101,6 +101,15 @@ function createQuestions(managerArray, deptArray, roleArray) {
 }
 
 //FUNCTIONS REQUIRED FOR PROMPTS
+async function viewAllEmployees(callback) {
+  connection.execute(
+    "SELECT * FROM `employee e` JOIN `role r` ON `e.role_id` = `r.id`",
+    function (err, results, fields) {
+      callback(results);
+    }
+  );
+}
+
 async function findAllEmployees(callback) {
   connection.execute(
     "SELECT `first_name`, `last_name`, `id` FROM `employee`",
@@ -150,11 +159,15 @@ function init(questions) {
   inquirer.prompt(questions).then((response) => {
     switch (response.initialChoice) {
       case "View All Employees":
-        findAllEmployees((empList) => {
-          console.table(empList);
-          init(questions);
-        });
-
+        // viewAllEmployees((empList) => {
+        //   console.log(empList);
+        // });
+        connection.execute(
+          "SELECT * FROM `employee e` JOIN `role r` ON `e.role_id` = `r.id`",
+          function (err, rows) {
+            console.log(rows);
+          }
+        );
         break;
       case "Add Employee":
         connection.execute(
