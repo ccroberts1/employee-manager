@@ -2,8 +2,7 @@ require("dotenv").config();
 const mysql = require("mysql2");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
-
-//GLOBAL VARIABLES
+const figlet = require("figlet");
 
 //CREATES DATABASE CONNECTION
 const connection = mysql.createConnection({
@@ -103,7 +102,21 @@ function createQuestions(managerArray, deptArray, roleArray) {
 //FUNCTIONS REQUIRED FOR PROMPTS
 async function viewAllEmployees(callback) {
   connection.execute(
-    "SELECT * FROM `employee e` JOIN `role r` ON `e.role_id` = `r.id`",
+    "SELECT e.id, e.first_name, e.last_name, title, d.name, salary, mgr.first_name manager_first, mgr.last_name manager_last \
+    FROM `employee` e JOIN `role` r ON e.role_id = r.id \
+    JOIN `department` d ON r.department_id = d.id \
+    LEFT OUTER JOIN `employee` mgr ON e.manager_id = mgr.id",
+    function (err, results, fields) {
+      callback(results);
+    }
+  );
+}
+
+async function viewAllRoles(callback) {
+  connection.execute(
+    "SELECT r.id, title, salary, name department_name \
+FROM `role` r \
+JOIN `department` d ON r.department_id = d.id",
     function (err, results, fields) {
       callback(results);
     }
@@ -136,6 +149,25 @@ async function findAllRoles(callback) {
   );
 }
 
+figlet.text(
+  "Employee Manager",
+  {
+    font: "cybermedium",
+    horizontalLayout: "default",
+    verticalLayout: "default",
+    width: 80,
+    whitespaceBreak: true,
+  },
+  function (err, data) {
+    if (err) {
+      console.log("Something went wrong...");
+      console.dir(err);
+      return;
+    }
+    console.log(data);
+  }
+);
+
 findAllEmployees((empList) => {
   let managerArray = empList.map((obj) => {
     return { name: `${obj.first_name} ${obj.last_name}`, value: obj.id };
@@ -159,15 +191,10 @@ function init(questions) {
   inquirer.prompt(questions).then((response) => {
     switch (response.initialChoice) {
       case "View All Employees":
-        // viewAllEmployees((empList) => {
-        //   console.log(empList);
-        // });
-        connection.execute(
-          "SELECT * FROM `employee e` JOIN `role r` ON `e.role_id` = `r.id`",
-          function (err, rows) {
-            console.log(rows);
-          }
-        );
+        viewAllEmployees((empList) => {
+          console.table(empList);
+          init(questions);
+        });
         break;
       case "Add Employee":
         connection.execute(
@@ -196,7 +223,7 @@ function init(questions) {
         );
         break;
       case "View All Roles":
-        findAllRoles((roleList) => {
+        viewAllRoles((roleList) => {
           console.table(roleList);
           init(questions);
         });
