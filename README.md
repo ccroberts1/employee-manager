@@ -10,7 +10,7 @@ The Inquirer package is used to allow for interaction with the command line and 
 
 In the future, I'd like to move the functions to a class to make the code cleaner as well as adding some remove/delete functionality and the ability to sum the salaries by department.
 
-![Link to a video walkthrough](youtubelink)
+![Link to a video walkthrough](https://www.youtube.com/watch?v=FZ2DXaF0smM)
 
 ## Table of Contents
 
